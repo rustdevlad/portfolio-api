@@ -19,23 +19,32 @@ export async function GET() {
       );
     }
 
-    const tracks: LastFmTrack[] = data.recenttracks.track.map((track: {
-      name: string;
-      artist: { '#text': string };
-      album: { '#text': string };
-      image: { size: string; '#text': string }[];
-      url: string;
-      '@attr'?: { nowplaying: string };
-      date?: { uts: string };
-    }) => ({
-      name: track.name,
-      artist: track.artist['#text'],
-      album: track.album['#text'],
-      albumImageUrl: track.image.find(img => img.size === 'large')?.['#text'] || '',
-      url: decodeURIComponent(track.url),
-      isNowPlaying: track['@attr']?.nowplaying === 'true',
-      timestamp: track.date?.uts,
-    }));
+    const first = data?.recenttracks?.track?.[0];
+
+    if (!first) {
+      return new Response(
+        JSON.stringify({ tracks: [] }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
+    const isNowPlaying = first['@attr']?.nowplaying === 'true';
+    const timestamp = first.date?.uts ?? (isNowPlaying ? String(Math.floor(Date.now() / 1000)) : undefined);
+
+    const tracks: LastFmTrack[] = [{
+      name: first.name,
+      artist: first.artist['#text'],
+      album: first.album['#text'],
+      albumImageUrl: first.image.find((img: { size: string; '#text': string }) => img.size === 'large')?.['#text'] || '',
+      url: decodeURIComponent(first.url),
+      isNowPlaying,
+      timestamp,
+    }];
 
     return new Response(
       JSON.stringify({ tracks }),

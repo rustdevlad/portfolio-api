@@ -1,8 +1,8 @@
 const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
 const LASTFM_USERNAME = process.env.LASTFM_USERNAME;
 
-export async function getRecentTracks() {
-  const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USERNAME}&api_key=${LASTFM_API_KEY}&format=json`;
+export async function getRecentTracks(limit: number = 1) {
+  const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USERNAME}&api_key=${LASTFM_API_KEY}&format=json&limit=${limit}`;
 
   try {
     const response = await fetch(url);
