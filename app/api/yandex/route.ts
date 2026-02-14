@@ -1,45 +1,19 @@
 import { getCurrentYandexTrack } from '../../lib/yandex';
+import { jsonResponse, optionsResponse, CacheControl } from '../../lib/response';
 
 export const runtime = 'edge';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
 export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
+  return optionsResponse();
 }
 
 export async function GET() {
   try {
     const track = await getCurrentYandexTrack();
     
-    return new Response(
-      JSON.stringify(track),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    return jsonResponse(track, { cache: CacheControl.NO_CACHE });
   } catch (error) {
-    console.error('Error:', error);
-    return new Response(
-      JSON.stringify(null),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    console.error('Yandex error:', error);
+    return jsonResponse(null, { cache: CacheControl.NO_CACHE });
   }
 }

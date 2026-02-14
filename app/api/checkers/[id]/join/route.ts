@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabase';
-import type { JoinGameRequest } from '../../../../types/checkers';
+import { supabase } from '@/app/lib/supabase';
+import { nextJsonResponse, nextErrorResponse, corsHeaders } from '@/app/lib/response';
+import type { JoinGameRequest } from '@/app/types/checkers';
 
 export const runtime = 'edge';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -33,26 +28,17 @@ export async function POST(
 
     if (fetchError) {
       if (fetchError.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Game not found' },
-          { status: 404, headers: corsHeaders }
-        );
+        return nextErrorResponse('Game not found', 404);
       }
       throw fetchError;
     }
 
     if (gameData.status !== 'waiting') {
-      return NextResponse.json(
-        { error: 'Game is not available for joining' },
-        { status: 400, headers: corsHeaders }
-      );
+      return nextErrorResponse('Game is not available for joining', 400);
     }
 
     if (gameData.player_black) {
-      return NextResponse.json(
-        { error: 'Game is already full' },
-        { status: 400, headers: corsHeaders }
-      );
+      return nextErrorResponse('Game is already full', 400);
     }
 
     const { data, error } = await supabase
@@ -68,14 +54,9 @@ export async function POST(
 
     if (error) throw error;
 
-    return NextResponse.json(data, {
-      headers: corsHeaders,
-    });
+    return nextJsonResponse(data);
   } catch (error) {
     console.error('Failed to join game:', error);
-    return NextResponse.json(
-      { error: 'Failed to join game' },
-      { status: 500, headers: corsHeaders }
-    );
+    return nextErrorResponse('Failed to join game', 500);
   }
 }

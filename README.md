@@ -8,6 +8,8 @@ Backend API service for personal portfolio website that provides realtime data a
   - Discord presence status
   - Spotify current track
   - Last.fm current track
+  - Stats.fm current track
+  - Yandex Music current track
   - Steam gaming activity
   - osu! statistics and recent activity
   - GitHub pinned repositories
@@ -15,18 +17,40 @@ Backend API service for personal portfolio website that provides realtime data a
   - Site analytics
 
 - **Tech Stack**
-  - Next.js 13+ with App Router and Edge Runtime
+  - Next.js 15+ with App Router and Edge Runtime
   - TypeScript for type safety
   - Supabase for database
   - Edge Functions for optimal performance
 
 - **Architecture**
   - RESTful API endpoints
-  - Rate limiting
-  - CORS support
-  - Error handling
+  - In-memory caching for external APIs
+  - Rate limiting for write operations
+  - Standardized CORS support
+  - Structured error handling
+  - Health check endpoint for monitoring
 
 ## 📚 API Endpoints
+
+### Health Check
+```
+GET /api/health
+```
+Returns API health status and diagnostics.
+
+**Response Example:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-02-13T12:00:00.000Z",
+  "version": "0.1.0",
+  "uptime": 3600,
+  "checks": [
+    { "name": "environment", "status": "pass" },
+    { "name": "external_connectivity", "status": "pass" }
+  ]
+}
+```
 
 ### Discord Status
 ```

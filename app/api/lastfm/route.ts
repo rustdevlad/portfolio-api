@@ -1,38 +1,22 @@
 import { getRecentTracks } from '../../lib/lastfm';
+import { jsonResponse, optionsResponse, CacheControl } from '../../lib/response';
 import type { LastFmTrack } from '../../types';
 
 export const runtime = 'edge';
+
+export async function OPTIONS() {
+  return optionsResponse();
+}
 
 export async function GET() {
   try {
     const data = await getRecentTracks();
 
-    if (!data) {
-      return new Response(
-        JSON.stringify({ tracks: [] }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+    if (!data?.recenttracks?.track?.[0]) {
+      return jsonResponse({ tracks: [] }, { cache: CacheControl.NO_CACHE });
     }
 
-    const first = data?.recenttracks?.track?.[0];
-
-    if (!first) {
-      return new Response(
-        JSON.stringify({ tracks: [] }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-    }
-
+    const first = data.recenttracks.track[0];
     const isNowPlaying = first['@attr']?.nowplaying === 'true';
     const timestamp = first.date?.uts ?? (isNowPlaying ? String(Math.floor(Date.now() / 1000)) : undefined);
 
@@ -46,25 +30,9 @@ export async function GET() {
       timestamp,
     }];
 
-    return new Response(
-      JSON.stringify({ tracks }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    return jsonResponse({ tracks }, { cache: CacheControl.NO_CACHE });
   } catch (error) {
-    console.error('Error fetching Last.fm data:', error);
-    return new Response(
-      JSON.stringify({ tracks: [] }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    console.error('Last.fm error:', error);
+    return jsonResponse({ tracks: [] }, { cache: CacheControl.NO_CACHE });
   }
 }

@@ -31,6 +31,10 @@ interface YandexTrackResponse {
 }
 
 export async function getCurrentYandexTrack() {
+  if (!YANDEX_API_TOKEN) {
+    return null;
+  }
+
   try {
     const response = await fetch("https://ru-node-1.pulsesync.dev/api/v1/track/status", {
       headers: {
@@ -38,11 +42,11 @@ export async function getCurrentYandexTrack() {
         "authorization": `Bearer ${YANDEX_API_TOKEN}`
       },
       cache: 'no-store',
-      next: { revalidate: 0 }
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch Yandex Music data: ${response.status}`);
+      console.error('Yandex API error:', response.status);
+      return null;
     }
 
     const data = await response.json() as YandexTrackResponse;
@@ -53,7 +57,7 @@ export async function getCurrentYandexTrack() {
 
     return {
       name: data.track.title || '',
-      artists: data.track.artists?.map((artist: YandexArtist) => artist.name).join(', ') || '',
+      artists: data.track.artists?.map((artist) => artist.name).join(', ') || '',
       album: data.track.albums?.[0]?.title || '',
       albumImageUrl: data.track.albumArt || '',
       url: `https://music.yandex.ru/album/${data.track.albums?.[0]?.id}/track/${data.track.realId}`,

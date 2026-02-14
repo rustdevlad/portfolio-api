@@ -1,68 +1,41 @@
 import { getNowPlaying } from '../../lib/spotify';
+import { jsonResponse, optionsResponse, CacheControl } from '../../lib/response';
 import type { SpotifyTrack } from '../../types';
 
 export const runtime = 'edge';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
 export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
+  return optionsResponse();
 }
 
 export async function GET() {
   try {
     const response = await getNowPlaying();
 
-    if (response.status === 401) {
-      return new Response(
-        JSON.stringify({ isPlaying: false }),
-        {
-          status: 200,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+    if (response.status === 401 || response.status === 204) {
+      return jsonResponse({ isPlaying: false }, { cache: CacheControl.NO_CACHE });
+    }
+
+    if (!response.ok) {
+      console.error('Spotify API error:', response.status);
+      return jsonResponse({ isPlaying: false }, { cache: CacheControl.NO_CACHE });
     }
 
     const song = (await response.json()) as SpotifyTrack;
 
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         isPlaying: song.is_playing,
         title: song.item?.name,
         artist: song.item?.artists.map(artist => artist.name).join(', '),
         album: song.item?.album?.name,
         albumImageUrl: song.item?.album?.images[0]?.url,
         songUrl: song.item?.external_urls?.spotify,
-      }),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      }
+      },
+      { cache: CacheControl.NO_CACHE }
     );
   } catch (error) {
-    console.error('Error:', error);
-    return new Response(
-      JSON.stringify({ isPlaying: false }),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    console.error('Spotify error:', error);
+    return jsonResponse({ isPlaying: false }, { cache: CacheControl.NO_CACHE });
   }
 }

@@ -1,45 +1,22 @@
 import { getCurrentGame } from '../../lib/steam';
+import { jsonResponse, optionsResponse, CacheControl } from '../../lib/response';
 
 export const runtime = 'edge';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
 export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
+  return optionsResponse();
 }
 
 export async function GET() {
   try {
     const game = await getCurrentGame();
     
-    return new Response(
-      JSON.stringify(game),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    // Use short cache for live status, medium for recent games
+    const cacheControl = game?.isPlaying ? CacheControl.NO_CACHE : CacheControl.MEDIUM;
+
+    return jsonResponse(game, { cache: cacheControl });
   } catch (error) {
-    console.error('Error:', error);
-    return new Response(
-      JSON.stringify(null),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    console.error('Steam error:', error);
+    return jsonResponse(null, { cache: CacheControl.SHORT });
   }
 }

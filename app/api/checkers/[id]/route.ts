@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../lib/supabase';
-import type { CheckersGameState } from '../../../types/checkers';
+import { supabase } from '@/app/lib/supabase';
+import { nextJsonResponse, nextErrorResponse, corsHeaders } from '@/app/lib/response';
+import type { CheckersGameState } from '@/app/types/checkers';
 
 export const runtime = 'edge';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -32,10 +27,7 @@ export async function GET(
 
     if (gameError) {
       if (gameError.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Game not found' },
-          { status: 404, headers: corsHeaders }
-        );
+        return nextErrorResponse('Game not found', 404);
       }
       throw gameError;
     }
@@ -55,14 +47,9 @@ export async function GET(
       is_player_turn: true
     };
 
-    return NextResponse.json(response, {
-      headers: corsHeaders,
-    });
+    return nextJsonResponse(response);
   } catch (error) {
     console.error('Failed to get game:', error);
-    return NextResponse.json(
-      { error: 'Failed to get game' },
-      { status: 500, headers: corsHeaders }
-    );
+    return nextErrorResponse('Failed to get game', 500);
   }
 }

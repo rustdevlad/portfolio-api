@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabase';
-import { isValidMove, applyMove, checkWinner } from '../../../../types/checkers';
-import type { MoveRequest } from '../../../../types/checkers';
+import { supabase } from '@/app/lib/supabase';
+import { nextJsonResponse, nextErrorResponse, corsHeaders } from '@/app/lib/response';
+import { isValidMove, applyMove, checkWinner } from '@/app/types/checkers';
+import type { MoveRequest } from '@/app/types/checkers';
 
 export const runtime = 'edge';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -34,35 +29,23 @@ export async function POST(
 
     if (fetchError) {
       if (fetchError.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Game not found' },
-          { status: 404, headers: corsHeaders }
-        );
+        return nextErrorResponse('Game not found', 404);
       }
       throw fetchError;
     }
 
     if (gameData.status !== 'playing') {
-      return NextResponse.json(
-        { error: 'Game is not in playing state' },
-        { status: 400, headers: corsHeaders }
-      );
+      return nextErrorResponse('Game is not in playing state', 400);
     }
 
     if (gameData.current_turn !== move.player) {
-      return NextResponse.json(
-        { error: 'Not your turn' },
-        { status: 400, headers: corsHeaders }
-      );
+      return nextErrorResponse('Not your turn', 400);
     }
 
     const board = gameData.board as number[][];
     
     if (!isValidMove(board, move.from_row, move.from_col, move.to_row, move.to_col, move.player)) {
-      return NextResponse.json(
-        { error: 'Invalid move' },
-        { status: 400, headers: corsHeaders }
-      );
+      return nextErrorResponse('Invalid move', 400);
     }
 
     const moveResult = applyMove(board, move);
@@ -105,21 +88,16 @@ export async function POST(
 
     if (moveError) throw moveError;
 
-    return NextResponse.json({
+    return nextJsonResponse({
       game: updatedGame,
       move_result: {
         captured: moveResult.captured,
         winner: winner,
         next_turn: gameStatus === 'finished' ? null : nextTurn
       }
-    }, {
-      headers: corsHeaders,
     });
   } catch (error) {
     console.error('Failed to make move:', error);
-    return NextResponse.json(
-      { error: 'Failed to make move' },
-      { status: 500, headers: corsHeaders }
-    );
+    return nextErrorResponse('Failed to make move', 500);
   }
 }

@@ -1,14 +1,10 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '../../lib/supabase';
+import { nextJsonResponse, nextErrorResponse, corsHeaders } from '../../lib/response';
+import { rateLimiter, RateLimits, getClientIP, rateLimitHeaders } from '../../lib/rate-limit';
 import type { CreateMessageRequest, Message } from '../../types/messages';
 
 export const runtime = 'edge';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -27,52 +23,51 @@ export async function GET() {
 
     if (error) throw error;
 
-    return NextResponse.json(data as Message[], {
-      headers: corsHeaders,
-    });
+    return nextJsonResponse(data as Message[]);
   } catch (error) {
     console.error('Failed to get messages:', error);
-    return NextResponse.json(
-      { error: 'Failed to get messages' },
-      { status: 500, headers: corsHeaders }
-    );
+    return nextErrorResponse('Failed to get messages', 500);
   }
 }
 
 export async function POST(req: Request) {
   try {
+    const clientIP = getClientIP(req);
+    const rateLimit = rateLimiter.check(
+      `messages:${clientIP}`,
+      RateLimits.WRITE.maxRequests,
+      RateLimits.WRITE.windowMs
+    );
+
+    if (!rateLimit.allowed) {
+      return nextErrorResponse('Too many requests. Please try again later.', 429);
+    }
+
     const body = (await req.json()) as CreateMessageRequest;
     
     if (!body.content?.trim()) {
-      return NextResponse.json(
-        { error: 'Message content is required' },
-        { status: 400, headers: corsHeaders }
-      );
+      return nextErrorResponse('Message content is required', 400);
     }
 
     if (body.content.length > 500) {
-      return NextResponse.json(
-        { error: 'Message is too long' },
-        { status: 400, headers: corsHeaders }
-      );
+      return nextErrorResponse('Message is too long (max 500 characters)', 400);
     }
+
+    const trimmedContent = body.content.trim();
 
     const { data, error } = await supabase
       .from('messages')
-      .insert([{ content: body.content.trim() }])
+      .insert([{ content: trimmedContent }])
       .select()
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json(data as Message, {
-      headers: corsHeaders,
+    return nextJsonResponse(data as Message, {
+      headers: rateLimitHeaders(rateLimit.remaining, rateLimit.resetIn),
     });
   } catch (error) {
     console.error('Failed to create message:', error);
-    return NextResponse.json(
-      { error: 'Failed to create message' },
-      { status: 500, headers: corsHeaders }
-    );
+    return nextErrorResponse('Failed to create message', 500);
   }
 }

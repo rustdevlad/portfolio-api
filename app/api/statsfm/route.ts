@@ -1,37 +1,21 @@
 import { getCurrentTrack } from '../../lib/statsfm';
+import { jsonResponse, optionsResponse, errorResponse, CacheControl } from '../../lib/response';
 
-export const runtime = 'nodejs';
+export const runtime = 'edge';
+
+export async function OPTIONS() {
+  return optionsResponse();
+}
 
 export async function GET() {
   try {
     const track = await getCurrentTrack();
     
-    return new Response(
-      JSON.stringify(track),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS'
-        }
-      }
-    );
+    return jsonResponse(track, { cache: CacheControl.NO_CACHE });
   } catch (err) {
     const error = err as Error;
-    console.error('Route error:', error);
-    
-    return new Response(
-      JSON.stringify({ 
-        error: error?.message || 'An unknown error occurred' 
-      }),
-      {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      }
-    );
+    console.error('Stats.fm error:', error);
+
+    return errorResponse(error?.message || 'Failed to fetch Stats.fm data', 500);
   }
 }

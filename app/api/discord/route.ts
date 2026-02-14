@@ -1,18 +1,28 @@
-import { NextResponse } from 'next/server';
+import { jsonResponse, CacheControl } from '../../lib/response';
+
+export const runtime = 'edge';
 
 const DISCORD_ID = '605732226201550892';
 
 export async function GET() {
- try {
-   const response = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_ID}`);
-   if (!response.ok) throw new Error('Failed to fetch');
-   const data = await response.json();
-   
-   return NextResponse.json({
-     status: data.data.discord_status || 'offline'
-   });
- } catch (error) {
-   console.error('Discord status error:', error);
-   return NextResponse.json({ status: 'offline' });
- }
+  try {
+    const response = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_ID}`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      console.error('Lanyard API error:', response.status);
+      return jsonResponse({ status: 'offline' }, { cache: CacheControl.NO_CACHE });
+    }
+
+    const data = await response.json();
+
+    return jsonResponse(
+      { status: data.data?.discord_status || 'offline' },
+      { cache: CacheControl.NO_CACHE }
+    );
+  } catch (error) {
+    console.error('Discord status error:', error);
+    return jsonResponse({ status: 'offline' }, { cache: CacheControl.NO_CACHE });
+  }
 }
