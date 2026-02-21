@@ -26,7 +26,7 @@ export default function Home() {
       <h3>GET /api/discord</h3>
       <p>Returns discord status</p>
       
-      <p>Note: This API is intended for use with https://onswix.uz</p>
+      <p>Note: This API is intended for use with https://rustdevlad.is-a.dev</p>
     </div>
   )
 }

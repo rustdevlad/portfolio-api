@@ -11,6 +11,9 @@
 !.yarn/versions
 /.vscode
 
+# idea
+.idea/
+
 # testing
 /coverage
 

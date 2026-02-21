@@ -295,6 +295,6 @@ Contributions, issues and feature requests are welcome!
 
 ## 📞 Contact
 
-Developer - [@onswix](https://t.me/onswix)
+Developer - [@rustdevlad](https://t.me/rustdevlad)
 
-Project Link: [https://github.com/onlive1337/portfolio-api](https://github.com/onlive1337/portfolio-api)
+Project Link: [https://github.com/rustdevlad/portfolio-api](https://github.com/rustdevlad/portfolio-api)
