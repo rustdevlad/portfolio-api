@@ -2,7 +2,7 @@ import type { GithubResponse, GithubRepository } from '../types';
 import { cache, CacheTTL } from './cache';
 
 const CACHE_KEY = 'github_repos';
-const GITHUB_USERNAME = 'onlive1337';
+const GITHUB_USERNAME = 'rustdevlad';
 
 export async function getPinnedRepos() {
   const cached = cache.get<ReturnType<typeof formatRepos>>(CACHE_KEY);

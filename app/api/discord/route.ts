@@ -2,7 +2,7 @@ import { jsonResponse, CacheControl } from '../../lib/response';
 
 export const runtime = 'edge';
 
-const DISCORD_ID = '605732226201550892';
+const DISCORD_ID = '1139593105969000449';
 
 export async function GET() {
   try {
