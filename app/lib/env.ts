@@ -82,7 +82,7 @@ function loadConfig(): EnvConfig {
       apiToken: getEnvVar('YANDEX_API_TOKEN', false),
     },
     discord: {
-      userId: '605732226201550892',
+      userId: '1139593105969000449',
     },
   };
 }

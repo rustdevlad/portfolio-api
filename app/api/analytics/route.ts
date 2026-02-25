@@ -32,21 +32,27 @@ export async function POST(req: Request) {
 
     const { error: visitorError } = await supabase
       .from('visitors')
-      .upsert({ ip_address: ip }, { onConflict: 'ip_address' });
+      .upsert({ ip_address: ip, last_visit: new Date().toISOString() }, { onConflict: 'ip_address', ignoreDuplicates: false });
 
     if (visitorError) throw visitorError;
 
     const { count: uniqueVisitors } = await supabase
       .from('visitors')
-      .select('*', { count: 'exact' });
+      .select('*', { count: 'exact', head: true });
 
-    const { data: analytics, error: analyticsError } = await supabase
+    const { data: analyticsArray, error: analyticsError } = await supabase
       .rpc('increment_views', {
         unique_visitors_count: uniqueVisitors || 0,
         last_visit: new Date().toISOString()
       });
 
     if (analyticsError) throw analyticsError;
+
+    const analytics = analyticsArray?.[0];
+
+    if (!analytics) {
+      throw new Error('increment_views returned no data');
+    }
 
     return nextJsonResponse({
       views: analytics.views,
